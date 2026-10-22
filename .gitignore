@@ -1,0 +1,55 @@
+# Environment & Secrets (NEVER COMMIT API KEYS)
+.env
+.env.local
+.env.*.local
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Runtime Database & Live Logs
+logs/*.db
+logs/*.db-journal
+logs/*.log
+logs/*.txt
+logs/*.csv
+logs/*.jsonl
+!logs/.gitkeep
+
+# Transient Runtime Images & Queues
+incoming_images/*
+!incoming_images/.gitkeep
+pending_queue/*
+!pending_queue/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor configs
+.idea/
+.vscode/
+*.swp
+*.swo
