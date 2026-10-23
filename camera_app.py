@@ -591,8 +591,8 @@ class ApiAvailabilityChecker:
     def _monitoring_loop(self):
         self.check_now()
         while not self.stop_signal.is_set():
-            # Check every 60s when healthy; poll every 20s if quota exhausted to detect recovery
-            interval = 20.0 if not self.is_available else 60.0
+            # Check every 5 min (300s) when healthy; poll every 90s if quota exhausted to detect recovery (0 token cost via models.get)
+            interval = 90.0 if not self.is_available else 300.0
             self.stop_signal.wait(interval)
             if self.stop_signal.is_set():
                 break
@@ -605,6 +605,11 @@ class ApiAvailabilityChecker:
 
         active_key = self.bridge.key_pool.get_active_key()
         if not active_key:
+            # If all keys were exhausted, attempt a reset to see if daily/hourly quota renewed
+            self.bridge.key_pool.reset_exhaustion()
+            active_key = self.bridge.key_pool.get_active_key()
+
+        if not active_key:
             with self.lock:
                 self.is_available = False
                 self.status = "QUOTA_EXHAUSTED"
@@ -616,10 +621,8 @@ class ApiAvailabilityChecker:
         t0 = time.time()
         try:
             client = genai.Client(api_key=active_key, http_options=types.HttpOptions(timeout=10000))
-            client.models.generate_content(
-                model=PRIMARY_MODEL,
-                contents="ping"
-            )
+            # Zero-token model metadata probe (does NOT burn generation tokens)
+            client.models.get(model=PRIMARY_MODEL)
             latency = (time.time() - t0) * 1000.0
             with self.lock:
                 self.is_available = True

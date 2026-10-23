@@ -361,6 +361,7 @@ class ApiKeyPool:
     def mark_exhausted(self, key: str, error_detail: str = "") -> Optional[str]:
         """Marks a key as exhausted and rotates to the next available key."""
         self.exhausted_keys.add(key)
+        self._last_exhaustion_time = time.time()
         key_num = self.keys.index(key) + 1 if key in self.keys else "?"
         logger.log(f"[API KEY #{key_num} EXHAUSTED] Quota limit reached ({error_detail[:60]}...).", level="WARNING")
 
@@ -377,6 +378,38 @@ class ApiKeyPool:
     def reset_exhaustion(self):
         """Resets exhausted keys pool (e.g. for a new day or manual retry)."""
         self.exhausted_keys.clear()
+
+
+def optimize_image_for_api(path: Path, max_dim: int = 640, quality: int = 80) -> bytes:
+    """Downscales image in-memory to fit within a single multimodal tile (~258 tokens vs ~2000 tokens)."""
+    try:
+        with Image.open(path) as img:
+            img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            import io
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=quality, optimize=True)
+            return buf.getvalue()
+    except Exception:
+        with open(path, "rb") as f:
+            return f.read()
+
+
+def has_green_foliage(path: Path, min_ratio: float = 0.02) -> bool:
+    """Pre-filters empty railing / non-plant captures locally using OpenCV HSV for 0 API tokens."""
+    try:
+        import cv2
+        img = cv2.imread(str(path))
+        if img is None:
+            return True
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        # Green HSV color band for capsicum foliage
+        mask = cv2.inRange(hsv, (25, 35, 35), (85, 255, 255))
+        ratio = cv2.countNonZero(mask) / float(img.shape[0] * img.shape[1])
+        return ratio >= min_ratio
+    except Exception:
+        return True
 
 
 class GeminiBridge:
@@ -403,12 +436,27 @@ class GeminiBridge:
 
     def analyze(self, path: Path) -> Tuple[bool, Optional[CapsicumDiagnosis], Optional[str]]:
         """
-        Attempts evaluation using the active API key.
-        Rotates automatically on 429 quota exhaustion.
-        Returns:
-            (success: bool, diagnosis: Optional[CapsicumDiagnosis], error_type: Optional[str])
-            error_type can be 'ALL_KEYS_EXHAUSTED' or other.
+        Attempts evaluation using the active API key with token optimization:
+        - Rejects non-plant captures locally via OpenCV (0 tokens)
+        - Downscales image to 640px (~258 tokens vs 2000+)
+        - Disables hidden thinking tokens (thinking_budget=0)
         """
+        # 1. Zero-Token Local Optical Gating (Reject empty railings, floors, shadows locally)
+        if not has_green_foliage(path):
+            logger.log(f"Local Pre-Filter: '{path.name}' has no green plant foliage (<2% chlorophyll HSV). Sorted for 0 tokens.", level="INFO")
+            diag = CapsicumDiagnosis(
+                is_capsicum_plant=False,
+                plant_part="unrelated",
+                health_status="unrelated",
+                primary_condition="Unrelated Non-Plant Subject (No Foliage Detected)",
+                confidence_score=0.98,
+                severity_level="unrelated",
+                visual_symptoms=["Optical spectral analysis detected absence of chlorophyll foliage in capture."],
+                recommended_action="Frame categorized as non-plant railing or structural area. 0 API tokens consumed.",
+                quarantine_required=False
+            )
+            return True, diag, None
+
         self._wait_pacing()
 
         active_key = self.key_pool.get_active_key()
@@ -418,24 +466,31 @@ class GeminiBridge:
         from google import genai
         from google.genai import types
 
-        ext = path.suffix.lower()
-        mime = "image/png" if ext == ".png" else "image/jpeg"
+        # 2. Downscaled image byte stream (fits single tile ~258 tokens)
+        data = optimize_image_for_api(path, max_dim=640, quality=80)
+        part = types.Part.from_bytes(data=data, mime_type="image/jpeg")
 
-        with open(path, "rb") as f:
-            data = f.read()
-
-        part = types.Part.from_bytes(data=data, mime_type=mime)
         prompt = (
             "Analyze this greenhouse surveillance capture. "
             "Determine if it is a capsicum plant. If yes, evaluate health, identify condition, "
             "and recommend agronomic remedies. Return JSON adhering to schema."
         )
 
+        # 3. Disable thinking tokens if supported
+        extra_kwargs = {}
+        thinking_cfg = getattr(types, "ThinkingConfig", None)
+        if thinking_cfg:
+            try:
+                extra_kwargs["thinking_config"] = thinking_cfg(thinking_budget=0)
+            except Exception:
+                pass
+
         config = types.GenerateContentConfig(
             system_instruction=CAPSICUM_SYSTEM_PROMPT,
             response_mime_type="application/json",
             response_schema=CapsicumDiagnosis,
-            temperature=0.2,
+            temperature=0.1,
+            **extra_kwargs
         )
 
         # Loop through keys if exhaustion occurs
@@ -454,13 +509,11 @@ class GeminiBridge:
                 except Exception as model_err:
                     err_str = str(model_err)
                     if self._is_quota_error(err_str):
-                        # Rotate key in pool!
                         active_key = self.key_pool.mark_exhausted(active_key, err_str)
                         break  # Break inner model loop, retry with next key
                     logger.log(f"Model {model} note: {err_str[:80]}", level="WARNING")
                     continue
             else:
-                # If neither model succeeded and it wasn't quota, return failure
                 break
 
         if not self.key_pool.get_active_key():

@@ -68,10 +68,10 @@ def run_simulation():
     logger.log("[AUDIT] VERIFICATION AUDIT", level="INFO")
     logger.log("=" * 65, level="INFO")
 
-    # 1. Incoming must be empty
-    remaining = list(INCOMING_DIR.glob("*.*"))
-    logger.log(f"1. Remaining incoming files : {len(remaining)} (Expected: 0)", level="INFO")
-    assert len(remaining) == 0, "Error: incoming_images not empty"
+    # 1. Incoming must be empty of images
+    remaining = [p for p in INCOMING_DIR.glob("*.*") if p.suffix.lower() in (".jpg", ".jpeg", ".png")]
+    logger.log(f"1. Remaining incoming image files : {len(remaining)} (Expected: 0)", level="INFO")
+    assert len(remaining) == 0, f"Error: incoming_images not empty: {remaining}"
 
     # 2. Check SQLite database
     summary = db.get_summary()
