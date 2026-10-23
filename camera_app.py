@@ -900,12 +900,19 @@ HTML_CONTENT = """<!DOCTYPE html>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root {
+    :root, [data-theme="light"] {
       --bg-void: #f1f5f9;
       --bg-panel: #ffffff;
       --bg-surface: #f8fafc;
       --border-subtle: #e2e8f0;
       --border-strong: #cbd5e1;
+      --header-bg: rgba(255, 255, 255, 0.95);
+      --strip-bg: rgba(255, 255, 255, 0.95);
+      --chip-bg: #f1f5f9;
+      --chip-hover: #e2e8f0;
+      --table-header-bg: #f1f5f9;
+      --table-row-hover: #f8fafc;
+      --table-border: #f1f5f9;
       --primary: #059669;
       --primary-glow: rgba(5, 150, 105, 0.2);
       --accent-cyan: #0284c7;
@@ -917,6 +924,60 @@ HTML_CONTENT = """<!DOCTYPE html>
       --text-low: #64748b;
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
+      --modal-bg: #ffffff;
+      --modal-subbox: #f8fafc;
+      --modal-remedy-bg: #f0fdf4;
+      --modal-remedy-border: #bbf7d0;
+      --modal-remedy-text: #065f46;
+      --hud-chip-bg: rgba(255, 255, 255, 0.94);
+      --hud-chip-text: #0f172a;
+      --hud-chip-border: #cbd5e1;
+      --tag-unrelated-bg: #f1f5f9;
+      --tag-unrelated-color: #475569;
+      --tag-unrelated-border: #e2e8f0;
+      --card-meta-b: #1e293b;
+      --badge-bg: #f8fafc;
+      --grid-pattern-color: rgba(15, 23, 42, 0.035);
+      --box-shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    [data-theme="dark"] {
+      --bg-void: #090d16;
+      --bg-panel: #0f172a;
+      --bg-surface: #1e293b;
+      --border-subtle: #1e293b;
+      --border-strong: #334155;
+      --header-bg: rgba(15, 23, 42, 0.94);
+      --strip-bg: rgba(15, 23, 42, 0.94);
+      --chip-bg: #1e293b;
+      --chip-hover: #334155;
+      --table-header-bg: #1e293b;
+      --table-row-hover: #162032;
+      --table-border: #1e293b;
+      --primary: #10b981;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --accent-cyan: #38bdf8;
+      --accent-amber: #fbbf24;
+      --accent-rose: #fb7185;
+      --accent-violet: #a78bfa;
+      --text-high: #f8fafc;
+      --text-medium: #cbd5e1;
+      --text-low: #94a3b8;
+      --modal-bg: #0f172a;
+      --modal-subbox: #1e293b;
+      --modal-remedy-bg: rgba(16, 185, 129, 0.12);
+      --modal-remedy-border: rgba(16, 185, 129, 0.35);
+      --modal-remedy-text: #6ee7b7;
+      --hud-chip-bg: rgba(15, 23, 42, 0.88);
+      --hud-chip-text: #f8fafc;
+      --hud-chip-border: #334155;
+      --tag-unrelated-bg: #1e293b;
+      --tag-unrelated-color: #94a3b8;
+      --tag-unrelated-border: #334155;
+      --card-meta-b: #f1f5f9;
+      --badge-bg: #1e293b;
+      --grid-pattern-color: rgba(255, 255, 255, 0.03);
+      --box-shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.25);
     }
 
     * {
@@ -928,10 +989,10 @@ HTML_CONTENT = """<!DOCTYPE html>
     body {
       background-color: var(--bg-void);
       background-image: 
-        radial-gradient(circle at 12% 10%, rgba(5, 150, 105, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 88% 90%, rgba(2, 132, 199, 0.05) 0%, transparent 40%),
-        linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+        radial-gradient(circle at 12% 10%, rgba(5, 150, 105, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 88% 90%, rgba(2, 132, 199, 0.06) 0%, transparent 40%),
+        linear-gradient(var(--grid-pattern-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-pattern-color) 1px, transparent 1px);
       background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px;
       color: var(--text-high);
       font-family: var(--font-sans);
@@ -941,11 +1002,12 @@ HTML_CONTENT = """<!DOCTYPE html>
       display: flex;
       flex-direction: column;
       user-select: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
-    /* Enterprise SCADA Header (Light Mode) */
+    /* Enterprise SCADA Header */
     header {
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--header-bg);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border-subtle);
       padding: 0.5rem 1.4rem;
@@ -957,7 +1019,9 @@ HTML_CONTENT = """<!DOCTYPE html>
       transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
                   opacity 0.2s ease, 
                   padding 0.25s ease, 
-                  transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                  transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  background 0.2s ease,
+                  border-color 0.2s ease;
       max-height: 56px;
       overflow: hidden;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -977,7 +1041,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       display: flex;
       align-items: center;
       gap: 0.35rem;
-      background: #f1f5f9;
+      background: var(--chip-bg);
       border: 1px solid var(--border-subtle);
       color: var(--text-medium);
       padding: 0.3rem 0.65rem;
@@ -989,7 +1053,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       transition: all 0.15s ease;
     }
     .btn-topbar-toggle:hover {
-      background: #e2e8f0;
+      background: var(--chip-hover);
       color: var(--text-high);
       border-color: var(--border-strong);
     }
@@ -1000,7 +1064,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       top: 0;
       left: 50%;
       transform: translate(-50%, -100%);
-      background: rgba(255, 255, 255, 0.98);
+      background: var(--header-bg);
       backdrop-filter: blur(12px);
       border: 1px solid var(--border-strong);
       border-top: none;
@@ -1019,10 +1083,10 @@ HTML_CONTENT = """<!DOCTYPE html>
       opacity: 0;
       pointer-events: none;
       transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, background 0.15s ease, color 0.15s ease;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     }
     .floating-header-btn:hover {
-      background: #f8fafc;
+      background: var(--bg-surface);
       color: var(--primary);
       border-color: var(--primary);
     }
@@ -1065,14 +1129,15 @@ HTML_CONTENT = """<!DOCTYPE html>
       letter-spacing: 0.02em;
     }
 
-    /* Central Cockpit Navigation Tabs (Light Mode) */
+    /* Central Cockpit Navigation Tabs */
     .cockpit-nav-bar {
       display: flex;
       gap: 0.4rem;
-      background: #f1f5f9;
+      background: var(--chip-bg);
       padding: 0.2rem;
       border-radius: 8px;
       border: 1px solid var(--border-subtle);
+      transition: background 0.2s ease, border-color 0.2s ease;
     }
 
     .cockpit-tab-btn {
@@ -1093,11 +1158,11 @@ HTML_CONTENT = """<!DOCTYPE html>
     }
     .cockpit-tab-btn:hover {
       color: var(--text-high);
-      background: #e2e8f0;
+      background: var(--chip-hover);
     }
     .cockpit-tab-btn.active {
-      background: #ffffff;
-      border-color: #cbd5e1;
+      background: var(--bg-panel);
+      border-color: var(--border-strong);
       color: var(--primary);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
@@ -1105,14 +1170,14 @@ HTML_CONTENT = """<!DOCTYPE html>
       width: 18px;
       height: 18px;
       border-radius: 4px;
-      background: #e2e8f0;
+      background: var(--chip-hover);
       font-family: var(--font-mono);
       font-size: 0.7rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #334155;
+      color: var(--text-medium);
     }
     .cockpit-tab-btn.active .tab-index {
       background: var(--primary);
@@ -1123,14 +1188,14 @@ HTML_CONTENT = """<!DOCTYPE html>
     .telemetry-badges {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.65rem;
     }
 
     .badge-pill {
       display: flex;
       align-items: center;
       gap: 0.45rem;
-      background: #f8fafc;
+      background: var(--badge-bg);
       border: 1px solid var(--border-subtle);
       color: var(--text-medium);
       padding: 0.3rem 0.65rem;
@@ -1138,26 +1203,27 @@ HTML_CONTENT = """<!DOCTYPE html>
       font-family: var(--font-mono);
       font-size: 0.7rem;
       font-weight: 600;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     }
     .badge-pill.status-green {
-      border-color: rgba(5, 150, 105, 0.3);
-      color: #047857;
-      background: rgba(5, 150, 105, 0.08);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: var(--primary);
+      background: rgba(16, 185, 129, 0.1);
     }
     .badge-pill.status-amber {
-      border-color: rgba(217, 119, 6, 0.3);
-      color: #b45309;
-      background: rgba(217, 119, 6, 0.08);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.1);
     }
     .badge-pill.status-blue {
-      border-color: rgba(2, 132, 199, 0.3);
-      color: #0369a1;
-      background: rgba(2, 132, 199, 0.08);
+      border-color: rgba(56, 189, 248, 0.35);
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.1);
     }
     .badge-pill.status-rose {
-      border-color: rgba(225, 29, 72, 0.3);
-      color: #be123c;
-      background: rgba(225, 29, 72, 0.08);
+      border-color: rgba(244, 63, 94, 0.35);
+      color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.1);
     }
     .indicator-node {
       width: 6px;
@@ -1206,7 +1272,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--box-shadow-panel);
     }
 
     #canvasPreview, #canvasPreviewV1 {
@@ -1235,17 +1301,17 @@ HTML_CONTENT = """<!DOCTYPE html>
       align-items: flex-start;
     }
     .hud-metric-chip {
-      background: rgba(255, 255, 255, 0.94);
+      background: var(--hud-chip-bg);
       backdrop-filter: blur(8px);
-      border: 1px solid #cbd5e1;
-      color: #0f172a;
+      border: 1px solid var(--hud-chip-border);
+      color: var(--hud-chip-text);
       padding: 0.25rem 0.55rem;
       border-radius: 4px;
       font-family: var(--font-mono);
       font-size: 0.68rem;
       display: flex;
       gap: 0.45rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
     .reticle-bracket {
@@ -1270,13 +1336,13 @@ HTML_CONTENT = """<!DOCTYPE html>
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--strip-bg);
       backdrop-filter: blur(12px);
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--border-strong);
       border-radius: 6px;
       padding: 0.35rem 0.75rem;
       pointer-events: auto;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
     }
 
     .mode-switch-group {
@@ -1284,9 +1350,9 @@ HTML_CONTENT = """<!DOCTYPE html>
       gap: 0.35rem;
     }
     .chip-btn {
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      color: #334155;
+      background: var(--chip-bg);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-medium);
       padding: 0.28rem 0.6rem;
       border-radius: 4px;
       font-size: 0.7rem;
@@ -1296,11 +1362,11 @@ HTML_CONTENT = """<!DOCTYPE html>
       transition: all 0.15s ease;
     }
     .chip-btn:hover {
-      background: #e2e8f0;
-      color: #0f172a;
+      background: var(--chip-hover);
+      color: var(--text-high);
     }
     .chip-btn.active {
-      background: rgba(5, 150, 105, 0.12);
+      background: var(--primary-glow);
       border-color: var(--primary);
       color: var(--primary);
     }
@@ -1342,12 +1408,12 @@ HTML_CONTENT = """<!DOCTYPE html>
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      box-shadow: var(--box-shadow-panel);
     }
 
     .module-toolbar {
       padding: 0.55rem 0.9rem;
-      background: #f8fafc;
+      background: var(--bg-surface);
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
@@ -1369,7 +1435,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      background: #ffffff;
+      background: var(--bg-panel);
     }
 
     .scada-table {
@@ -1379,8 +1445,8 @@ HTML_CONTENT = """<!DOCTYPE html>
       text-align: left;
     }
     .scada-table th {
-      background: #f1f5f9;
-      color: #475569;
+      background: var(--table-header-bg);
+      color: var(--text-low);
       font-family: var(--font-mono);
       font-weight: 700;
       font-size: 0.65rem;
@@ -1394,12 +1460,12 @@ HTML_CONTENT = """<!DOCTYPE html>
     }
     .scada-table td {
       padding: 0.45rem 0.75rem;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--table-border);
       vertical-align: middle;
-      color: #1e293b;
+      color: var(--text-high);
     }
     .scada-table tr:hover {
-      background: #f8fafc;
+      background: var(--table-row-hover);
     }
 
     .specimen-thumb {
@@ -1407,7 +1473,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       height: 33px;
       border-radius: 3px;
       object-fit: cover;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--border-strong);
       cursor: pointer;
       transition: border-color 0.15s ease;
     }
@@ -1426,23 +1492,23 @@ HTML_CONTENT = """<!DOCTYPE html>
       letter-spacing: 0.04em;
     }
     .tag-status.diseased {
-      background: #ffe4e6;
-      color: #be123c;
-      border: 1px solid #fecdd3;
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+      border: 1px solid rgba(244, 63, 94, 0.35);
     }
     .tag-status.healthy {
-      background: #dcfce7;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(16, 185, 129, 0.35);
     }
     .tag-status.unrelated {
-      background: #f1f5f9;
-      color: #475569;
-      border: 1px solid #e2e8f0;
+      background: var(--tag-unrelated-bg);
+      color: var(--tag-unrelated-color);
+      border: 1px solid var(--tag-unrelated-border);
     }
 
     .remediation-directive {
-      color: #334155;
+      color: var(--text-medium);
       font-size: 0.7rem;
       line-height: 1.35;
       display: -webkit-box;
@@ -1469,7 +1535,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       flex-direction: column;
       overflow: hidden;
       position: relative;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      box-shadow: var(--box-shadow-panel);
     }
 
     .card-top-stat {
@@ -1510,12 +1576,12 @@ HTML_CONTENT = """<!DOCTYPE html>
       font-family: var(--font-mono);
       color: var(--text-low);
       padding-bottom: 0.25rem;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--table-border);
       margin-bottom: 0.35rem;
       flex-shrink: 0;
     }
     .channel-meta-sub span b {
-      color: #1e293b;
+      color: var(--card-meta-b);
     }
 
     .chart-viewport-box {
@@ -1554,7 +1620,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       padding: 0.85rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      box-shadow: var(--box-shadow-panel);
     }
     .block-header {
       font-size: 0.78rem;
@@ -1589,7 +1655,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       -webkit-appearance: none;
       width: 100%;
       height: 4px;
-      background: #cbd5e1;
+      background: var(--border-strong);
       border-radius: 2px;
       outline: none;
     }
@@ -1613,8 +1679,8 @@ HTML_CONTENT = """<!DOCTYPE html>
     .hue-active-gate {
       position: absolute;
       top: 0; bottom: 0;
-      border: 1.5px solid #0f172a;
-      box-shadow: 0 0 6px rgba(15, 23, 42, 0.4);
+      border: 1.5px solid var(--text-high);
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
       border-radius: 3px;
       pointer-events: none;
     }
@@ -1624,7 +1690,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.65);
+      background: rgba(0, 0, 0, 0.72);
       backdrop-filter: blur(12px);
       z-index: 1000;
       align-items: center;
@@ -1633,7 +1699,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     }
     #specimenModal.active { display: flex; }
     .modal-frame {
-      background: #ffffff;
+      background: var(--modal-bg);
       border: 1px solid var(--border-strong);
       border-radius: 8px;
       max-width: 860px;
@@ -1641,25 +1707,25 @@ HTML_CONTENT = """<!DOCTYPE html>
       display: grid;
       grid-template-columns: 1fr 1fr;
       overflow: hidden;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
     }
     .modal-symptoms-box {
-      background: #f8fafc;
+      background: var(--modal-subbox);
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
       padding: 0.85rem;
       margin-bottom: 1rem;
     }
     .modal-remediation-box {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
+      background: var(--modal-remedy-bg);
+      border: 1px solid var(--modal-remedy-border);
       border-radius: 6px;
       padding: 0.85rem;
     }
     .modal-close-btn {
       margin-top: 1.5rem;
       padding: 0.6rem;
-      background: #f1f5f9;
+      background: var(--chip-bg);
       border: 1px solid var(--border-strong);
       color: var(--text-high);
       border-radius: 4px;
@@ -1670,7 +1736,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       transition: all 0.15s ease;
     }
     .modal-close-btn:hover {
-      background: #e2e8f0;
+      background: var(--chip-hover);
     }
 
     /* Toast */
@@ -1678,9 +1744,9 @@ HTML_CONTENT = """<!DOCTYPE html>
       position: fixed;
       bottom: 1.25rem;
       right: 1.25rem;
-      background: #0f172a;
+      background: var(--bg-panel);
       border: 1px solid var(--primary);
-      color: #ffffff;
+      color: var(--text-high);
       padding: 0.65rem 1.15rem;
       border-radius: 6px;
       font-family: var(--font-mono);
@@ -1689,7 +1755,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       opacity: 0;
       transition: all 0.2s ease;
       z-index: 2000;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
     }
     #toastLog.active {
       transform: translateY(0);
@@ -1760,6 +1826,25 @@ HTML_CONTENT = """<!DOCTYPE html>
         <span id="txtNextSnap">NEXT SNAP: 15m 00s (4/HR)</span>
       </div>
 
+      <!-- Theme Switcher (Dark / Light Mode) -->
+      <button id="btnThemeToggle" class="btn-topbar-toggle" onclick="toggleTheme()" title="Toggle Dark / Light Theme (Shortcut: T)">
+        <svg id="iconSun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="iconMoon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <span id="txtTheme">DARK [T]</span>
+      </button>
+
       <button id="btnHideTopBar" class="btn-topbar-toggle" onclick="toggleTopBar()" title="Hide Top Navigation Bar (Shortcut: H)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="18 15 12 9 6 15"></polyline>
@@ -1770,7 +1855,7 @@ HTML_CONTENT = """<!DOCTYPE html>
   </header>
 
   <!-- Floating Reveal Button when Header is Hidden -->
-  <button id="floatingShowHeaderBtn" class="floating-header-btn" onclick="toggleTopBar()" title="Reveal Top Navigation Bar (Shortcut: H)">
+  <button id="floatingShowHeaderBtn" class="floating-header-btn" onclick="toggleTopBar()" title="Reveal Top Navigation Bar (Shortcut: H | Theme: T)">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="6 9 12 15 18 9"></polyline>
     </svg>
@@ -2116,11 +2201,64 @@ HTML_CONTENT = """<!DOCTYPE html>
       }, 260);
     }
 
+    // --- Theme Controller (Dark Mode & Light Mode) ---
+    let currentTheme = 'dark';
+
+    function applyTheme(theme) {
+      currentTheme = theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      const iconSun = document.getElementById('iconSun');
+      const iconMoon = document.getElementById('iconMoon');
+      const txtTheme = document.getElementById('txtTheme');
+
+      if (theme === 'dark') {
+        if (iconSun) iconSun.style.display = 'inline-block';
+        if (iconMoon) iconMoon.style.display = 'none';
+        if (txtTheme) txtTheme.innerText = 'LIGHT [T]';
+      } else {
+        if (iconSun) iconSun.style.display = 'none';
+        if (iconMoon) iconMoon.style.display = 'inline-block';
+        if (txtTheme) txtTheme.innerText = 'DARK [T]';
+      }
+
+      updateChartsTheme(theme === 'dark');
+
+      try {
+        localStorage.setItem('scada_theme', theme);
+      } catch (e) {}
+    }
+
+    function toggleTheme() {
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+      showToast(`SCADA Theme: ${nextTheme.toUpperCase()} MODE ACTIVE`);
+    }
+
+    function updateChartsTheme(isDark) {
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.05)';
+      const tickColor = isDark ? '#94a3b8' : '#64748b';
+      [chartHumidity, chartTemperature, chartSoil, chartLight].forEach(chart => {
+        if (!chart) return;
+        if (chart.options && chart.options.scales) {
+          if (chart.options.scales.x) {
+            chart.options.scales.x.grid.color = gridColor;
+            chart.options.scales.x.ticks.color = tickColor;
+          }
+          if (chart.options.scales.y) {
+            chart.options.scales.y.grid.color = gridColor;
+            chart.options.scales.y.ticks.color = tickColor;
+          }
+        }
+        chart.update('none');
+      });
+    }
+
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT') return;
       if (e.key === '1') setCockpitView(1);
       if (e.key === '2') setCockpitView(2);
       if (e.key === 'h' || e.key === 'H') toggleTopBar();
+      if (e.key === 't' || e.key === 'T') toggleTheme();
       if (e.key === 'Escape' && isHeaderHidden) toggleTopBar(false);
     });
 
@@ -2720,6 +2858,13 @@ HTML_CONTENT = """<!DOCTYPE html>
 
     // SCADA Initialization
     window.addEventListener('load', () => {
+      try {
+        const savedTheme = localStorage.getItem('scada_theme') || 'dark';
+        applyTheme(savedTheme);
+      } catch (e) {
+        applyTheme('dark');
+      }
+
       initStream();
       updateSpectrumGate();
       initTechnicalCharts();
